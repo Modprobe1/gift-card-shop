@@ -20,14 +20,24 @@
 
 ## 🚀 Быстрый старт
 
-### Продакшен (рекомендуемый)
+### Продакшен с интегрированным фронтендом (рекомендуемый)
 
 ```bash
 # Клонируем репозиторий
 git clone https://github.com/Modprobe1/gift-card-shop.git
 cd gift-card-shop
 
-# Запускаем продакшен версию
+# Запускаем автоматический деплой (фронтенд встроен в backend)
+chmod +x deploy-with-frontend.sh
+./deploy-with-frontend.sh
+
+# Откройте: http://YOUR_IP:8080/app
+```
+
+### Обычный продакшен
+
+```bash
+# Запускаем обычную версию
 docker compose up -d
 ```
 
@@ -40,13 +50,21 @@ docker compose -f docker-compose.dev.yml up -d
 
 ## 🌐 Доступ к сервисам
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8080  
-- **Database Admin**: http://localhost:8081
-  - Сервер: `database`
-  - Пользователь: `exchange_user`
-  - Пароль: `exchange_password`
-  - База: `crypto_exchange`
+### С интегрированным фронтендом:
+- **🎯 ФОРМА ОБМЕНА**: http://YOUR_IP:8080/app
+- **Backend API**: http://YOUR_IP:8080/
+- **Database Admin**: http://YOUR_IP:8081/
+
+### Обычный режим:
+- **Frontend**: http://YOUR_IP:3000
+- **Backend API**: http://YOUR_IP:8080  
+- **Database Admin**: http://YOUR_IP:8081
+
+### Данные для Adminer:
+- Сервер: `database`
+- Пользователь: `exchange_user`
+- Пароль: `exchange_password`
+- База: `crypto_exchange`
 
 ## 📚 API Endpoints
 

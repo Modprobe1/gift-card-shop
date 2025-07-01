@@ -29,6 +29,9 @@ WORKDIR /root/
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 
+# Create web directory for frontend files
+RUN mkdir -p /app/web
+
 # Expose port
 EXPOSE 8080
 

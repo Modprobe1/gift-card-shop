@@ -6,6 +6,7 @@ import (
 	"crypto-exchange-backend/internal/handlers"
 	"crypto-exchange-backend/internal/services"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -176,6 +177,28 @@ func setupRouter(h *handlers.Handler, cfg *config.Config) *gin.Engine {
 		apiOld.POST("/orders", h.CreateOrder)
 		apiOld.GET("/orders/:number", h.GetOrder)
 	}
+
+	// Добавляем статические файлы фронтенда
+	router.Static("/static", "/app/web/static")
+	router.StaticFile("/favicon.ico", "/app/web/favicon.ico")
+	router.StaticFile("/manifest.json", "/app/web/manifest.json")
+	router.StaticFile("/logo192.png", "/app/web/logo192.png")
+	
+	// Главная страница фронтенда
+	router.GET("/app", func(c *gin.Context) {
+		c.File("/app/web/index.html")
+	})
+	
+	// Все остальные пути фронтенда (для React Router)
+	router.NoRoute(func(c *gin.Context) {
+		// Если запрос к API, возвращаем 404
+		if strings.HasPrefix(c.Request.URL.Path, "/api") {
+			c.JSON(404, gin.H{"error": "API endpoint not found"})
+			return
+		}
+		// Иначе отдаем index.html для React Router
+		c.File("/app/web/index.html")
+	})
 
 	return router
 }
