@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
     container_name: crypto_exchange_frontend
     environment:
-      - REACT_APP_API_URL=http://localhost:8080
+      - REACT_APP_API_URL=http://45.12.111.208:8080
     ports:
       - "3000:3000"
     depends_on:

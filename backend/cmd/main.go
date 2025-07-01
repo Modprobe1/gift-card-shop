@@ -82,12 +82,18 @@ func setupRouter(h *handlers.Handler) *gin.Engine {
 	router.Use(gin.Recovery())
 
 	// CORS настройки
+	corsOrigins := []string{"http://localhost:3000", "http://localhost:3001"}
+	if cfg.Server.Mode == gin.ReleaseMode {
+		// В продакшене разрешаем все origins (или можно указать конкретные)
+		corsOrigins = []string{"*"}
+	}
+	
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001"},
+		AllowOrigins:     corsOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
+		AllowCredentials: false, // Устанавливаем false при использовании "*"
 		MaxAge:           12 * time.Hour,
 	}))
 
