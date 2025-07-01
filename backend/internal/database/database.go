@@ -50,16 +50,30 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 
 // Migrate выполняет миграции базы данных
 func Migrate(db *gorm.DB) error {
-	// Автоматические миграции для всех моделей
-	if err := db.AutoMigrate(
+	// Отключаем foreign key checks для миграции
+	if err := db.Exec("SET FOREIGN_KEY_CHECKS = 0").Error; err != nil {
+		return fmt.Errorf("failed to disable foreign key checks: %w", err)
+	}
+	
+	defer func() {
+		// Включаем обратно foreign key checks
+		db.Exec("SET FOREIGN_KEY_CHECKS = 1")
+	}()
+
+	// Автоматические миграции для всех моделей в правильном порядке
+	models := []interface{}{
 		&models.Currency{},
-		&models.ExchangeRate{},
 		&models.OrderStatus{},
+		&models.SystemSetting{},
+		&models.ExchangeRate{},
 		&models.ExchangeOrder{},
 		&models.OperationLog{},
-		&models.SystemSetting{},
-	); err != nil {
-		return fmt.Errorf("failed to migrate database: %w", err)
+	}
+	
+	for _, model := range models {
+		if err := db.AutoMigrate(model); err != nil {
+			return fmt.Errorf("failed to migrate %T: %w", model, err)
+		}
 	}
 
 	// Заполняем начальными данными, если нужно
@@ -128,18 +142,16 @@ func seedData(db *gorm.DB) error {
 			Decimals:  8,
 			IsActive:  true,
 		},
-		{
-			Code:      "ETH",
-			Name:      "Ethereum",
-			Symbol:    "ETH",
-			Network:   "Ethereum",
-			MinAmount: 0.01,
-			Decimals:  18,
-			IsActive:  true,
-		},
 	}
 
 	for _, currency := range currencies {
+		// Проверяем, существует ли уже такая валюта
+		var existing models.Currency
+		if err := db.Where("code = ?", currency.Code).First(&existing).Error; err == nil {
+			// Валюта уже существует, пропускаем
+			continue
+		}
+		
 		if err := db.Create(&currency).Error; err != nil {
 			return fmt.Errorf("failed to create currency %s: %w", currency.Code, err)
 		}
@@ -150,11 +162,22 @@ func seedData(db *gorm.DB) error {
 		{SettingKey: "site_name", SettingValue: "CryptoExchange", Description: "Название сайта"},
 		{SettingKey: "admin_email", SettingValue: "admin@cryptoexchange.com", Description: "Email администратора"},
 		{SettingKey: "order_expiry_minutes", SettingValue: "30", Description: "Время жизни заявки в минутах"},
-		{SettingKey: "commission_percent", SettingValue: "1.5", Description: "Комиссия в процентах"},
+		{SettingKey: "commission_percent", SettingValue: "2.0", Description: "Комиссия в процентах"},
 		{SettingKey: "api_update_interval", SettingValue: "60", Description: "Интервал обновления курсов в секундах"},
 	}
 
 	for _, setting := range settings {
+		// Проверяем, существует ли уже такая настройка
+		var existing models.SystemSetting
+		if err := db.Where("setting_key = ?", setting.SettingKey).First(&existing).Error; err == nil {
+			// Настройка уже существует, обновляем значение если это commission_percent
+			if setting.SettingKey == "commission_percent" && existing.SettingValue != "2.0" {
+				existing.SettingValue = "2.0"
+				db.Save(&existing)
+			}
+			continue
+		}
+		
 		if err := db.Create(&setting).Error; err != nil {
 			return fmt.Errorf("failed to create setting %s: %w", setting.SettingKey, err)
 		}
