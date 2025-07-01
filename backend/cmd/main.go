@@ -116,6 +116,21 @@ func setupRouter(h *handlers.Handler, cfg *config.Config) *gin.Engine {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	// Root endpoint
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"name": "Crypto Exchange API",
+			"version": "1.0.0",
+			"status": "running",
+			"endpoints": gin.H{
+				"health": "/api/health",
+				"currencies": "/api/v1/currencies",
+				"rates": "/api/v1/rates",
+				"orders": "/api/v1/orders",
+			},
+		})
+	})
+
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "timestamp": time.Now()})
