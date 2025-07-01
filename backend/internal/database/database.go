@@ -50,33 +50,51 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 
 // Migrate выполняет миграции базы данных
 func Migrate(db *gorm.DB) error {
-	// Отключаем foreign key checks для миграции
-	if err := db.Exec("SET FOREIGN_KEY_CHECKS = 0").Error; err != nil {
-		return fmt.Errorf("failed to disable foreign key checks: %w", err)
-	}
+	// Проверяем, существуют ли уже таблицы
+	var tableExists bool
+	db.Raw("SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'exchange_rates')").Scan(&tableExists)
 	
-	defer func() {
-		// Включаем обратно foreign key checks
-		db.Exec("SET FOREIGN_KEY_CHECKS = 1")
-	}()
-
-	// Автоматические миграции для всех моделей в правильном порядке
-	models := []interface{}{
-		&models.Currency{},
-		&models.OrderStatus{},
-		&models.SystemSetting{},
-		&models.ExchangeRate{},
-		&models.ExchangeOrder{},
-		&models.OperationLog{},
-	}
-	
-	for _, model := range models {
-		if err := db.AutoMigrate(model); err != nil {
-			return fmt.Errorf("failed to migrate %T: %w", model, err)
+	if tableExists {
+		// Если таблицы уже существуют, просто проверяем данные
+		if err := seedData(db); err != nil {
+			return fmt.Errorf("failed to seed data: %w", err)
 		}
+		return nil
 	}
 
-	// Заполняем начальными данными, если нужно
+	// Если таблиц нет, создаем их с нуля
+	// Отключаем foreign key checks для миграции
+	db.Exec("SET FOREIGN_KEY_CHECKS = 0")
+	
+	// Создаем таблицы без foreign keys сначала
+	if err := db.Migrator().CreateTable(&models.Currency{}); err != nil {
+		return fmt.Errorf("failed to create currencies table: %w", err)
+	}
+	
+	if err := db.Migrator().CreateTable(&models.OrderStatus{}); err != nil {
+		return fmt.Errorf("failed to create order_statuses table: %w", err)
+	}
+	
+	if err := db.Migrator().CreateTable(&models.SystemSetting{}); err != nil {
+		return fmt.Errorf("failed to create system_settings table: %w", err)
+	}
+	
+	if err := db.Migrator().CreateTable(&models.ExchangeRate{}); err != nil {
+		return fmt.Errorf("failed to create exchange_rates table: %w", err)
+	}
+	
+	if err := db.Migrator().CreateTable(&models.ExchangeOrder{}); err != nil {
+		return fmt.Errorf("failed to create exchange_orders table: %w", err)
+	}
+	
+	if err := db.Migrator().CreateTable(&models.OperationLog{}); err != nil {
+		return fmt.Errorf("failed to create operation_logs table: %w", err)
+	}
+	
+	// Включаем обратно foreign key checks
+	db.Exec("SET FOREIGN_KEY_CHECKS = 1")
+
+	// Заполняем начальными данными
 	if err := seedData(db); err != nil {
 		return fmt.Errorf("failed to seed data: %w", err)
 	}
