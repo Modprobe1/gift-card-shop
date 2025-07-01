@@ -18,6 +18,12 @@ services:
     networks:
       - crypto_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # Backend Go API
   backend:
@@ -33,13 +39,21 @@ services:
       - DB_NAME=crypto_exchange
       - GIN_MODE=release
       - PORT=8080
+      - LOG_LEVEL=info
     ports:
       - "8080:8080"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     networks:
       - crypto_network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Frontend React App
   frontend:

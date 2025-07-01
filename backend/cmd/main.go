@@ -11,6 +11,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -19,14 +20,32 @@ func main() {
 
 	// Настраиваем логирование
 	setupLogging(cfg.Server.LogLevel)
+	
+	logrus.Info("Starting Crypto Exchange Backend...")
+	logrus.Infof("Server Mode: %s", cfg.Server.Mode)
+	logrus.Infof("Database Host: %s:%s", cfg.Database.Host, cfg.Database.Port)
 
 	// Устанавливаем режим Gin
 	gin.SetMode(cfg.Server.Mode)
 
-	// Подключаемся к базе данных
-	db, err := database.Connect(cfg)
+	// Ждем немного, чтобы база данных успела запуститься
+	time.Sleep(5 * time.Second)
+
+	// Подключаемся к базе данных с повторными попытками
+	var db *gorm.DB
+	var err error
+	for i := 0; i < 10; i++ {
+		db, err = database.Connect(cfg)
+		if err == nil {
+			logrus.Info("Successfully connected to database")
+			break
+		}
+		logrus.Warnf("Failed to connect to database (attempt %d/10): %v", i+1, err)
+		time.Sleep(3 * time.Second)
+	}
+	
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatal("Failed to connect to database after 10 attempts:", err)
 	}
 
 	// Выполняем миграции
