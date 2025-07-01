@@ -46,7 +46,7 @@ func main() {
 	handler := handlers.NewHandler(currencyService, rateService, orderService)
 
 	// Создаем роутер
-	router := setupRouter(handler)
+	router := setupRouter(handler, cfg)
 
 	// Запускаем сервер
 	logrus.Infof("Starting server on port %s", cfg.Server.Port)
@@ -74,7 +74,7 @@ func setupLogging(level string) {
 	}
 }
 
-func setupRouter(h *handlers.Handler) *gin.Engine {
+func setupRouter(h *handlers.Handler, cfg *config.Config) *gin.Engine {
 	router := gin.New()
 
 	// Middleware
@@ -99,6 +99,11 @@ func setupRouter(h *handlers.Handler) *gin.Engine {
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok", "timestamp": time.Now()})
+	})
+	
+	// Health check для API
+	router.GET("/api/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "timestamp": time.Now()})
 	})
 
@@ -127,6 +132,15 @@ func setupRouter(h *handlers.Handler) *gin.Engine {
 			admin.PUT("/orders/:id/status", h.UpdateOrderStatus)
 			admin.GET("/statistics", h.GetStatistics)
 		}
+	}
+	
+	// Добавляем поддержку старых путей /api без версии
+	apiOld := router.Group("/api")
+	{
+		apiOld.GET("/currencies", h.GetCurrencies)
+		apiOld.GET("/rates", h.GetExchangeRates)
+		apiOld.POST("/orders", h.CreateOrder)
+		apiOld.GET("/orders/:number", h.GetOrder)
 	}
 
 	return router
