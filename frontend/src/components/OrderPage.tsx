@@ -4,16 +4,10 @@ import { exchangeApi, ExchangeOrder } from '../services/api';
 import './OrderPage.css';
 
 const OrderPage: React.FC = () => {
-  const { orderNumber, orderId } = useParams<{ orderNumber: string; orderId: string }>();
+  const { orderNumber } = useParams<{ orderNumber: string }>();
   const [order, setOrder] = useState<ExchangeOrder | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-
-  useEffect(() => {
-    if (orderNumber) {
-      loadOrder();
-    }
-  }, [orderNumber]);
 
   const loadOrder = async () => {
     if (!orderNumber) return;
@@ -28,6 +22,12 @@ const OrderPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (orderNumber) {
+      loadOrder();
+    }
+  }, [orderNumber, loadOrder]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

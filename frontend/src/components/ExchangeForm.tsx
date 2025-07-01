@@ -265,7 +265,7 @@ const ExchangeForm: React.FC = () => {
             <label className="agreement-checkbox">
               <input type="checkbox" required />
               <span className="checkmark"></span>
-              Я соглашаюсь с <a href="#" className="agreement-link">условиями сервиса</a>
+              Я соглашаюсь с <button type="button" className="agreement-link">условиями сервиса</button>
             </label>
           </div>
 

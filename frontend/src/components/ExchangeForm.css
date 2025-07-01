@@ -235,12 +235,18 @@
 
 .agreement-link {
   color: #007bff;
-  text-decoration: none;
+  text-decoration: underline;
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
   font-weight: 600;
 }
 
 .agreement-link:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  color: #0056b3;
 }
 
 /* Сообщения об ошибках */
