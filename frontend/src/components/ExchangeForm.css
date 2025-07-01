@@ -1,233 +1,226 @@
 .exchange-container {
-  max-width: 500px;
+  max-width: 600px;
   margin: 40px auto;
-  background: #f8f9fa;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 20px;
   overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
 .exchange-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 30px;
   text-align: center;
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.exchange-header h1 {
+  margin: 0 0 15px 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
 }
 
 .current-rate {
   font-size: 18px;
   font-weight: 500;
   margin: 0;
+  opacity: 0.9;
 }
 
 .exchange-form-container {
-  padding: 30px;
+  padding: 40px;
+  background: white;
+}
+
+/* Кнопки выбора направления */
+.direction-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.direction-btn {
+  padding: 15px 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  background: white;
+  color: #495057;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.direction-btn:hover {
+  border-color: #007bff;
+  background: #f8f9fa;
+}
+
+.direction-btn.active {
+  border-color: #007bff;
+  background: #007bff;
+  color: white;
+  transform: scale(1.02);
 }
 
 .exchange-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 25px;
 }
 
 /* Блоки обмена */
 .exchange-block {
-  background: white;
+  background: #f8f9fa;
   border: 2px solid #e9ecef;
-  border-radius: 12px;
-  padding: 20px;
-  transition: border-color 0.3s ease;
+  border-radius: 15px;
+  padding: 25px;
+  transition: all 0.3s ease;
 }
 
 .exchange-block:hover {
   border-color: #007bff;
+  background: white;
 }
 
 .from-block {
-  border-color: #28a745;
+  border-left: 4px solid #28a745;
 }
 
 .to-block {
-  border-color: #17a2b8;
+  border-left: 4px solid #17a2b8;
 }
 
 .exchange-label {
   display: block;
-  font-size: 14px;
-  color: #6c757d;
-  margin-bottom: 12px;
-  font-weight: 500;
+  font-size: 16px;
+  color: #495057;
+  margin-bottom: 15px;
+  font-weight: 600;
 }
 
 .exchange-input-container {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 15px;
 }
 
 .amount-input {
   flex: 1;
-  font-size: 32px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
   border: none;
   outline: none;
   background: transparent;
   color: #333;
   min-width: 0;
+  padding: 10px 0;
 }
 
 .amount-input::placeholder {
   color: #adb5bd;
+  font-weight: 400;
 }
 
 .amount-display {
   flex: 1;
-  font-size: 32px;
-  font-weight: 600;
-  color: #333;
+  font-size: 28px;
+  font-weight: 700;
+  color: #007bff;
   background: transparent;
   min-height: 48px;
   display: flex;
   align-items: center;
+  padding: 10px 0;
 }
 
-.currency-select {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 16px;
-  font-weight: 500;
+.currency-display {
+  background: #e9ecef;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
   color: #495057;
-  cursor: pointer;
   min-width: 180px;
-  outline: none;
+  text-align: center;
+  border: 2px solid transparent;
   transition: all 0.3s ease;
 }
 
-.currency-select:hover,
-.currency-select:focus {
+.currency-display:hover {
   border-color: #007bff;
-  background: white;
+  background: #f8f9fa;
 }
 
 .min-amount {
-  margin-top: 8px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 14px;
   color: #dc3545;
   font-weight: 500;
 }
 
-/* Кнопка обмена валют */
-.swap-button-container {
-  display: flex;
-  justify-content: center;
-  margin: -12px 0;
-  z-index: 1;
-  position: relative;
-}
-
-.swap-button {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #007bff;
-  color: white;
-  border: 3px solid #f8f9fa;
-  font-size: 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.swap-button:hover {
-  background: #0056b3;
-  transform: rotate(180deg);
-}
-
-/* Информация о комиссии */
 .commission-info {
-  background: #e9ecef;
-  border-radius: 8px;
-  padding: 16px;
-}
-
-.commission-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  margin-top: 10px;
   font-size: 14px;
-  color: #495057;
+  color: #6c757d;
+  font-style: italic;
 }
 
 /* Контактные поля */
 .contact-fields {
-  margin-top: 20px;
+  margin-top: 30px;
 }
 
-.contact-section h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
+.contact-fields h3 {
+  margin: 0 0 25px 0;
+  font-size: 20px;
   color: #333;
-  font-weight: 600;
+  font-weight: 700;
+  text-align: center;
 }
 
 .contact-input, .contact-textarea {
   width: 100%;
-  padding: 16px;
+  padding: 18px 20px;
   border: 2px solid #e9ecef;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
-  margin-bottom: 16px;
-  transition: border-color 0.3s ease;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 .contact-input:focus, .contact-textarea:focus {
   outline: none;
   border-color: #007bff;
-}
-
-.contact-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.contact-method {
-  flex: 0 0 140px;
-  padding: 16px;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  font-size: 16px;
-  background: white;
-  cursor: pointer;
-}
-
-.nickname-input {
-  flex: 1;
-  margin-bottom: 16px;
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
 }
 
 .contact-textarea {
   resize: vertical;
-  min-height: 80px;
-  font-family: inherit;
+  min-height: 100px;
 }
 
 /* Согласие с условиями */
 .agreement {
-  margin: 20px 0;
+  margin: 30px 0;
+  text-align: center;
 }
 
 .agreement-checkbox {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: 12px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
   color: #495057;
 }
@@ -237,11 +230,13 @@
   height: 20px;
   margin: 0;
   cursor: pointer;
+  accent-color: #007bff;
 }
 
 .agreement-link {
   color: #007bff;
   text-decoration: none;
+  font-weight: 600;
 }
 
 .agreement-link:hover {
@@ -250,13 +245,15 @@
 
 /* Сообщения об ошибках */
 .error-message {
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 8px;
-  padding: 16px;
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+  border: 1px solid #f1b0b7;
+  border-radius: 12px;
+  padding: 18px 20px;
   color: #721c24;
-  font-size: 14px;
-  margin: 16px 0;
+  font-size: 15px;
+  margin: 20px 0;
+  text-align: center;
+  font-weight: 500;
 }
 
 /* Кнопка отправки */
@@ -264,20 +261,22 @@
   background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 18px 32px;
-  font-size: 18px;
-  font-weight: 600;
+  border-radius: 15px;
+  padding: 20px 40px;
+  font-size: 20px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
+  margin-top: 20px;
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
 }
 
 .submit-button:hover:not(:disabled) {
   background: linear-gradient(135deg, #218838 0%, #1ba085 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
 }
 
 .submit-button:disabled {
@@ -294,32 +293,46 @@
     max-width: none;
   }
   
+  .exchange-header {
+    padding: 20px;
+  }
+  
+  .exchange-header h1 {
+    font-size: 24px;
+  }
+  
   .exchange-form-container {
     padding: 20px;
   }
   
+  .direction-buttons {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .exchange-input-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .currency-display {
+    width: 100%;
+    min-width: auto;
+  }
+  
   .amount-input, .amount-display {
     font-size: 24px;
+    text-align: center;
   }
   
-  .currency-select {
-    min-width: 140px;
-    font-size: 14px;
+  .contact-input, .contact-textarea {
+    padding: 15px 18px;
+    font-size: 16px;
   }
   
-  .contact-row {
-    flex-direction: column;
-    gap: 0;
-  }
-  
-  .contact-method {
-    flex: none;
-    width: 100%;
-    margin-bottom: 16px;
-  }
-  
-  .nickname-input {
-    margin-bottom: 16px;
+  .submit-button {
+    padding: 18px 30px;
+    font-size: 18px;
   }
 }
 
@@ -353,4 +366,25 @@
   to {
     transform: rotate(1turn);
   }
+}
+
+/* Дополнительные эффекты */
+.exchange-block {
+  position: relative;
+  overflow: hidden;
+}
+
+.exchange-block::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.exchange-block:hover::before {
+  left: 100%;
 }

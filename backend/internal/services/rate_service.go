@@ -21,15 +21,12 @@ type RateService struct {
 	client *http.Client
 }
 
+// CoinGeckoResponse структура ответа от CoinGecko API
 type CoinGeckoResponse struct {
 	Bitcoin struct {
 		USD float64 `json:"usd"`
 		RUB float64 `json:"rub"`
 	} `json:"bitcoin"`
-	Ethereum struct {
-		USD float64 `json:"usd"`
-		RUB float64 `json:"rub"`
-	} `json:"ethereum"`
 	Tether struct {
 		USD float64 `json:"usd"`
 		RUB float64 `json:"rub"`
@@ -123,7 +120,7 @@ func (s *RateService) Calculate(fromCode, toCode string, fromAmount float64) (*m
 		return nil, fmt.Errorf("amount exceeds maximum: %f", *exchangeRate.MaxAmount)
 	}
 	
-	// Получаем комиссию из настроек
+	// Получаем комиссию из настроек (2%)
 	commissionRate, err := s.getCommissionRate()
 	if err != nil {
 		return nil, err
@@ -135,7 +132,7 @@ func (s *RateService) Calculate(fromCode, toCode string, fromAmount float64) (*m
 	// Вычисляем комиссию
 	commission := baseToAmount * (commissionRate / 100)
 	
-	// Итоговая сумма к получению
+	// Итоговая сумма к получению (уже с вычетом комиссии)
 	toAmount := baseToAmount - commission
 	
 	response := &models.CalculateResponse{
@@ -172,7 +169,7 @@ func (s *RateService) StartRateUpdater() {
 	ticker := time.NewTicker(time.Duration(s.config.API.UpdateInterval) * time.Second)
 	defer ticker.Stop()
 	
-	logrus.Info("Starting rate updater")
+	logrus.Info("Starting rate updater for USDT-BTC and USDT-TBANK pairs")
 	
 	// Обновляем курсы сразу при запуске
 	if err := s.UpdateRatesFromAPI(); err != nil {
@@ -189,12 +186,12 @@ func (s *RateService) StartRateUpdater() {
 	}
 }
 
-// UpdateRatesFromAPI обновляет курсы из внешнего API
+// UpdateRatesFromAPI обновляет курсы из CoinGecko API с добавлением 2% профита
 func (s *RateService) UpdateRatesFromAPI() error {
 	logrus.Debug("Updating exchange rates from CoinGecko API")
 	
-	// Запрос к CoinGecko API
-	url := fmt.Sprintf("%s/simple/price?ids=bitcoin,ethereum,tether&vs_currencies=usd,rub", s.config.API.CoinGeckoURL)
+	// Запрос к CoinGecko API (только bitcoin и tether)
+	url := fmt.Sprintf("%s/simple/price?ids=bitcoin,tether&vs_currencies=usd,rub", s.config.API.CoinGeckoURL)
 	
 	resp, err := s.client.Get(url)
 	if err != nil {
@@ -227,26 +224,21 @@ func (s *RateService) UpdateRatesFromAPI() error {
 		currencies[currency.Code] = currency.ID
 	}
 	
-	// Обновляем курсы
+	// Применяем 2% профит к курсам
+	profitMargin := 1.02 // 2% профит
+	
+	// Обновляем только нужные курсы
 	rates := []struct {
 		from, to string
 		rate     float64
 	}{
-		// BTC курсы
-		{"BTC", "USDT_TRC20", 1.0 / apiResponse.Bitcoin.USD}, // BTC -> USDT
-		{"USDT_TRC20", "BTC", apiResponse.Bitcoin.USD},       // USDT -> BTC
-		{"BTC", "RUB_TBANK", apiResponse.Bitcoin.RUB},        // BTC -> RUB
-		{"RUB_TBANK", "BTC", 1.0 / apiResponse.Bitcoin.RUB},  // RUB -> BTC
+		// USDT -> BTC пара (основная)
+		{"USDT_TRC20", "BTC", (1.0 / apiResponse.Bitcoin.USD) / profitMargin}, // USDT -> BTC (с вычетом профита)
+		{"BTC", "USDT_TRC20", apiResponse.Bitcoin.USD * profitMargin},         // BTC -> USDT (с добавлением профита)
 		
-		// ETH курсы
-		{"ETH", "USDT_TRC20", 1.0 / apiResponse.Ethereum.USD}, // ETH -> USDT
-		{"USDT_TRC20", "ETH", apiResponse.Ethereum.USD},       // USDT -> ETH
-		{"ETH", "RUB_TBANK", apiResponse.Ethereum.RUB},        // ETH -> RUB
-		{"RUB_TBANK", "ETH", 1.0 / apiResponse.Ethereum.RUB},  // RUB -> ETH
-		
-		// USDT курсы
-		{"USDT_TRC20", "RUB_TBANK", apiResponse.Tether.RUB},       // USDT -> RUB
-		{"RUB_TBANK", "USDT_TRC20", 1.0 / apiResponse.Tether.RUB}, // RUB -> USDT
+		// USDT -> TBANK пара (дополнительная)
+		{"USDT_TRC20", "RUB_TBANK", apiResponse.Tether.RUB * profitMargin},        // USDT -> RUB (с добавлением профита)
+		{"RUB_TBANK", "USDT_TRC20", (1.0 / apiResponse.Tether.RUB) / profitMargin}, // RUB -> USDT (с вычетом профита)
 	}
 	
 	for _, r := range rates {
@@ -256,15 +248,17 @@ func (s *RateService) UpdateRatesFromAPI() error {
 		if fromExists && toExists {
 			if err := s.UpdateExchangeRate(fromID, toID, r.rate, "coingecko"); err != nil {
 				logrus.WithError(err).Errorf("Failed to update rate %s -> %s", r.from, r.to)
+			} else {
+				logrus.Debugf("Updated rate %s -> %s: %.8f", r.from, r.to, r.rate)
 			}
 		}
 	}
 	
-	logrus.Debug("Successfully updated exchange rates")
+	logrus.Info("Successfully updated exchange rates with 2% profit margin")
 	return nil
 }
 
-// getCommissionRate получает процент комиссии из настроек
+// getCommissionRate получает процент комиссии из настроек (должно быть 2%)
 func (s *RateService) getCommissionRate() (float64, error) {
 	var setting models.SystemSetting
 	
@@ -273,14 +267,14 @@ func (s *RateService) getCommissionRate() (float64, error) {
 	
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 1.5, nil // Дефолтная комиссия 1.5%
+			return 2.0, nil // Дефолтная комиссия 2%
 		}
 		return 0, err
 	}
 	
 	commission, err := strconv.ParseFloat(setting.SettingValue, 64)
 	if err != nil {
-		return 1.5, nil // Дефолтная комиссия при ошибке парсинга
+		return 2.0, nil // Дефолтная комиссия при ошибке парсинга
 	}
 	
 	return commission, nil

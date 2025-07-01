@@ -3,14 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { exchangeApi, Currency, CalculateResponse, CreateOrderRequest } from '../services/api';
 import './ExchangeForm.css';
 
+// Доступные направления обмена
+const EXCHANGE_DIRECTIONS = [
+  { from: 'USDT_TRC20', to: 'BTC', label: 'USDT → BTC' },
+  { from: 'BTC', to: 'USDT_TRC20', label: 'BTC → USDT' },
+  { from: 'USDT_TRC20', to: 'RUB_TBANK', label: 'USDT → RUB' },
+  { from: 'RUB_TBANK', to: 'USDT_TRC20', label: 'RUB → USDT' },
+];
+
 const ExchangeForm: React.FC = () => {
   const navigate = useNavigate();
   
   // Состояния
   const [currencies, setCurrencies] = useState<Currency[]>([]);
-  const [fromCurrency, setFromCurrency] = useState<string>('USDT_TRC20');
-  const [toCurrency, setToCurrency] = useState<string>('RUB_TBANK');
-  const [fromAmount, setFromAmount] = useState<string>('100');
+  const [selectedDirection, setSelectedDirection] = useState(0); // Индекс выбранного направления
+  const [fromAmount, setFromAmount] = useState<string>('');
   const [calculation, setCalculation] = useState<CalculateResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -30,12 +37,14 @@ const ExchangeForm: React.FC = () => {
     loadCurrencies();
   }, []);
 
-  // Пересчет при изменении валют или суммы
+  // Пересчет при изменении направления или суммы
   useEffect(() => {
     if (fromAmount && parseFloat(fromAmount) > 0) {
       calculateExchange();
+    } else {
+      setCalculation(null);
     }
-  }, [fromCurrency, toCurrency, fromAmount]);
+  }, [selectedDirection, fromAmount]);
 
   const loadCurrencies = async () => {
     try {
@@ -49,11 +58,13 @@ const ExchangeForm: React.FC = () => {
   const calculateExchange = async () => {
     if (!fromAmount || parseFloat(fromAmount) <= 0) return;
     
+    const direction = EXCHANGE_DIRECTIONS[selectedDirection];
+    
     try {
       setLoading(true);
       const result = await exchangeApi.calculate({
-        from_currency: fromCurrency,
-        to_currency: toCurrency,
+        from_currency: direction.from,
+        to_currency: direction.to,
         from_amount: parseFloat(fromAmount),
       });
       setCalculation(result);
@@ -64,12 +75,6 @@ const ExchangeForm: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSwapCurrencies = () => {
-    const temp = fromCurrency;
-    setFromCurrency(toCurrency);
-    setToCurrency(temp);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,9 +93,10 @@ const ExchangeForm: React.FC = () => {
     try {
       setLoading(true);
       
+      const direction = EXCHANGE_DIRECTIONS[selectedDirection];
       const orderRequest: CreateOrderRequest = {
-        from_currency: fromCurrency,
-        to_currency: toCurrency,
+        from_currency: direction.from,
+        to_currency: direction.to,
         from_amount: parseFloat(fromAmount),
         client_name: formData.clientName,
         client_phone: formData.clientPhone,
@@ -112,166 +118,146 @@ const ExchangeForm: React.FC = () => {
     }
   };
 
-  const getCurrencyOptions = () => {
-    return currencies.map(currency => (
-      <option key={currency.code} value={currency.code}>
-        {currency.name} ({currency.symbol})
-      </option>
-    ));
+  const getCurrencyInfo = (code: string) => {
+    return currencies.find(c => c.code === code);
   };
 
   const getMinAmount = () => {
-    const currency = currencies.find(c => c.code === fromCurrency);
+    const direction = EXCHANGE_DIRECTIONS[selectedDirection];
+    const currency = getCurrencyInfo(direction.from);
     return currency?.min_amount || 0;
   };
 
+  const getCurrentDirection = () => EXCHANGE_DIRECTIONS[selectedDirection];
+
   return (
     <div className="exchange-container">
-      {/* Заголовок с курсом */}
       <div className="exchange-header">
-        <div className="rate-info">
-          {calculation && (
-            <div className="current-rate">
-              1.00 {currencies.find(c => c.code === fromCurrency)?.symbol} = {calculation.rate.toFixed(4)} {currencies.find(c => c.code === toCurrency)?.symbol}
-            </div>
-          )}
-        </div>
+        <h1>Обмен криптовалюты</h1>
+        {calculation && (
+          <div className="current-rate">
+            Курс: 1 {getCurrencyInfo(getCurrentDirection().from)?.symbol} = {calculation.rate.toFixed(6)} {getCurrencyInfo(getCurrentDirection().to)?.symbol}
+          </div>
+        )}
       </div>
 
-      {/* Основная форма обмена */}
       <div className="exchange-form-container">
+        {/* Кнопки выбора направления */}
+        <div className="direction-buttons">
+          {EXCHANGE_DIRECTIONS.map((direction, index) => (
+            <button
+              key={index}
+              type="button"
+              className={`direction-btn ${selectedDirection === index ? 'active' : ''}`}
+              onClick={() => setSelectedDirection(index)}
+            >
+              {direction.label}
+            </button>
+          ))}
+        </div>
+
         <form onSubmit={handleSubmit} className="exchange-form">
           
-          {/* Блок "Вы отдаете" */}
+          {/* Блок "Отдаете" */}
           <div className="exchange-block from-block">
-            <label className="exchange-label">Вы отдаете</label>
+            <label className="exchange-label">
+              Отдаете ({getCurrencyInfo(getCurrentDirection().from)?.symbol}):
+            </label>
             <div className="exchange-input-container">
               <input
                 type="number"
                 value={fromAmount}
                 onChange={(e) => setFromAmount(e.target.value)}
-                placeholder="0"
+                placeholder="Введите сумму"
                 className="amount-input"
                 min={getMinAmount()}
-                step="0.01"
+                step="any"
                 required
               />
-              <select 
-                value={fromCurrency}
-                onChange={(e) => setFromCurrency(e.target.value)}
-                className="currency-select"
-              >
-                {getCurrencyOptions()}
-              </select>
+              <div className="currency-display">
+                {getCurrencyInfo(getCurrentDirection().from)?.name}
+              </div>
             </div>
             {getMinAmount() > 0 && (
-              <div className="min-amount">Min: {getMinAmount()}</div>
+              <div className="min-amount">Минимум: {getMinAmount()} {getCurrencyInfo(getCurrentDirection().from)?.symbol}</div>
             )}
           </div>
 
-          {/* Кнопка обмена */}
-          <div className="swap-button-container">
-            <button
-              type="button"
-              onClick={handleSwapCurrencies}
-              className="swap-button"
-              title="Поменять валюты местами"
-            >
-              ⇅
-            </button>
-          </div>
-
-          {/* Блок "Вы получаете" */}
+          {/* Блок "Получите" */}
           <div className="exchange-block to-block">
-            <label className="exchange-label">Вы получаете</label>
+            <label className="exchange-label">
+              Получите ({getCurrencyInfo(getCurrentDirection().to)?.symbol}):
+            </label>
             <div className="exchange-input-container">
               <div className="amount-display">
-                {calculation ? calculation.to_amount.toFixed(2) : '0'}
+                {loading ? 'Рассчитываем...' : (calculation ? calculation.to_amount.toFixed(6) : '0')}
               </div>
-              <select 
-                value={toCurrency}
-                onChange={(e) => setToCurrency(e.target.value)}
-                className="currency-select"
-              >
-                {getCurrencyOptions()}
-              </select>
+              <div className="currency-display">
+                {getCurrencyInfo(getCurrentDirection().to)?.name}
+              </div>
             </div>
+            {calculation && (
+              <div className="commission-info">
+                Комиссия {calculation.commission_rate}%: {calculation.commission.toFixed(6)} {getCurrencyInfo(getCurrentDirection().to)?.symbol}
+              </div>
+            )}
           </div>
-
-          {/* Информация о комиссии */}
-          {calculation && (
-            <div className="commission-info">
-              <div className="commission-row">
-                <span>Комиссия ({calculation.commission_rate}%):</span>
-                <span>{calculation.commission.toFixed(2)} {currencies.find(c => c.code === toCurrency)?.symbol}</span>
-              </div>
-            </div>
-          )}
 
           {/* Поля контактной информации */}
           <div className="contact-fields">
-            <div className="contact-section">
-              <h3>Контактная информация</h3>
-              
-              <input
-                type="tel"
-                placeholder="Ваш номер телефона для СБП *"
-                value={formData.clientPhone}
-                onChange={(e) => setFormData({...formData, clientPhone: e.target.value})}
-                className="contact-input"
-                required
-              />
+            <h3>Контактная информация</h3>
+            
+            <input
+              type="text"
+              placeholder="ФИО *"
+              value={formData.clientName}
+              onChange={(e) => setFormData({...formData, clientName: e.target.value})}
+              className="contact-input"
+              required
+            />
 
-              <input
-                type="text"
-                placeholder="Ваш ФИО для удобства перевода *"
-                value={formData.clientName}
-                onChange={(e) => setFormData({...formData, clientName: e.target.value})}
-                className="contact-input"
-                required
-              />
+            <input
+              type="tel"
+              placeholder="Номер телефона *"
+              value={formData.clientPhone}
+              onChange={(e) => setFormData({...formData, clientPhone: e.target.value})}
+              className="contact-input"
+              required
+            />
 
-              <input
-                type="email"
-                placeholder="Ваш E-mail *"
-                value={formData.clientEmail}
-                onChange={(e) => setFormData({...formData, clientEmail: e.target.value})}
-                className="contact-input"
-                required
-              />
+            <input
+              type="email"
+              placeholder="E-mail *"
+              value={formData.clientEmail}
+              onChange={(e) => setFormData({...formData, clientEmail: e.target.value})}
+              className="contact-input"
+              required
+            />
 
-              <div className="contact-row">
-                <select className="contact-method">
-                  <option value="telegram">Telegram</option>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="viber">Viber</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Никнейм"
-                  value={formData.clientTelegram}
-                  onChange={(e) => setFormData({...formData, clientTelegram: e.target.value})}
-                  className="contact-input nickname-input"
-                />
-              </div>
+            <input
+              type="text"
+              placeholder="Telegram"
+              value={formData.clientTelegram}
+              onChange={(e) => setFormData({...formData, clientTelegram: e.target.value})}
+              className="contact-input"
+            />
 
-              <input
-                type="text"
-                placeholder="Адрес кошелька для получения *"
-                value={formData.recipientWallet}
-                onChange={(e) => setFormData({...formData, recipientWallet: e.target.value})}
-                className="contact-input"
-                required
-              />
+            <input
+              type="text"
+              placeholder={`Адрес кошелька для получения ${getCurrencyInfo(getCurrentDirection().to)?.symbol} *`}
+              value={formData.recipientWallet}
+              onChange={(e) => setFormData({...formData, recipientWallet: e.target.value})}
+              className="contact-input"
+              required
+            />
 
-              <textarea
-                placeholder="Дополнительная информация"
-                value={formData.recipientDetails}
-                onChange={(e) => setFormData({...formData, recipientDetails: e.target.value})}
-                className="contact-textarea"
-                rows={3}
-              />
-            </div>
+            <textarea
+              placeholder="Дополнительная информация"
+              value={formData.recipientDetails}
+              onChange={(e) => setFormData({...formData, recipientDetails: e.target.value})}
+              className="contact-textarea"
+              rows={3}
+            />
           </div>
 
           {/* Согласие с условиями */}
@@ -279,7 +265,7 @@ const ExchangeForm: React.FC = () => {
             <label className="agreement-checkbox">
               <input type="checkbox" required />
               <span className="checkmark"></span>
-              Я соглашаюсь с <a href="#" className="agreement-link">условиями сервиса</a> и <a href="#" className="agreement-link">базовой проверкой аккаунта AML и KYC</a>
+              Я соглашаюсь с <a href="#" className="agreement-link">условиями сервиса</a>
             </label>
           </div>
 
@@ -293,10 +279,10 @@ const ExchangeForm: React.FC = () => {
           {/* Кнопка отправки */}
           <button
             type="submit"
-            disabled={loading || !calculation}
+            disabled={loading || !calculation || !fromAmount}
             className="submit-button"
           >
-            {loading ? 'Создание заявки...' : 'Обменять сейчас'}
+            {loading ? 'Создание заявки...' : 'Обменять'}
           </button>
         </form>
       </div>

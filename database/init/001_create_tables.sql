@@ -1,141 +1,148 @@
--- Создание таблиц для криптообменника
+-- Удаление существующих таблиц (если они есть)
+DROP TABLE IF EXISTS operation_logs;
+DROP TABLE IF EXISTS exchange_orders;
+DROP TABLE IF EXISTS order_statuses;
+DROP TABLE IF EXISTS exchange_rates;
+DROP TABLE IF EXISTS system_settings;
+DROP TABLE IF EXISTS currencies;
 
--- Таблица валют
+-- Создание таблицы валют
 CREATE TABLE currencies (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(10) NOT NULL UNIQUE,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
-    symbol VARCHAR(10),
+    code VARCHAR(20) UNIQUE NOT NULL,
+    symbol VARCHAR(10) NOT NULL,
     network VARCHAR(50),
-    icon_url VARCHAR(255),
+    min_amount DECIMAL(18,8) DEFAULT 0,
+    max_amount DECIMAL(18,8) NULL,
+    is_crypto BOOLEAN DEFAULT FALSE,
     is_active BOOLEAN DEFAULT TRUE,
-    min_amount DECIMAL(20, 8) DEFAULT 0,
-    max_amount DECIMAL(20, 8),
-    decimals INT DEFAULT 8,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Таблица курсов валют
+-- Создание таблицы курсов обмена
 CREATE TABLE exchange_rates (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     from_currency_id INT NOT NULL,
     to_currency_id INT NOT NULL,
-    rate DECIMAL(20, 8) NOT NULL,
-    reverse_rate DECIMAL(20, 8) NOT NULL,
-    source VARCHAR(50) NOT NULL,
+    rate DECIMAL(18,8) NOT NULL,
+    reverse_rate DECIMAL(18,8) NOT NULL,
+    source VARCHAR(50) DEFAULT 'manual',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (from_currency_id) REFERENCES currencies(id),
     FOREIGN KEY (to_currency_id) REFERENCES currencies(id),
-    UNIQUE KEY unique_pair (from_currency_id, to_currency_id)
+    UNIQUE KEY unique_currency_pair (from_currency_id, to_currency_id)
 );
 
--- Статусы заявок
+-- Создание таблицы статусов заказов
 CREATE TABLE order_statuses (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(50) NOT NULL UNIQUE,
-    description VARCHAR(255)
+    description TEXT,
+    color VARCHAR(7) DEFAULT '#007bff',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Таблица заявок на обмен
+-- Создание таблицы заказов на обмен
 CREATE TABLE exchange_orders (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    order_number VARCHAR(20) NOT NULL UNIQUE,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_number VARCHAR(20) UNIQUE NOT NULL,
     from_currency_id INT NOT NULL,
     to_currency_id INT NOT NULL,
-    from_amount DECIMAL(20, 8) NOT NULL,
-    to_amount DECIMAL(20, 8) NOT NULL,
-    rate DECIMAL(20, 8) NOT NULL,
-    status_id INT NOT NULL DEFAULT 1,
-    
-    -- Контактная информация клиента
-    client_phone VARCHAR(20),
-    client_name VARCHAR(255),
-    client_email VARCHAR(255),
+    from_amount DECIMAL(18,8) NOT NULL,
+    to_amount DECIMAL(18,8) NOT NULL,
+    rate DECIMAL(18,8) NOT NULL,
+    commission DECIMAL(18,8) NOT NULL,
+    commission_rate DECIMAL(5,2) NOT NULL,
+    status_id INT NOT NULL,
+    client_name VARCHAR(255) NOT NULL,
+    client_phone VARCHAR(50) NOT NULL,
+    client_email VARCHAR(255) NOT NULL,
     client_telegram VARCHAR(100),
-    
-    -- Реквизиты для получения
-    recipient_wallet VARCHAR(255),
+    recipient_wallet TEXT NOT NULL,
     recipient_details TEXT,
-    
-    -- Системная информация
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    referrer VARCHAR(255),
-    
-    -- Временные метки
-    expires_at TIMESTAMP,
+    expires_at TIMESTAMP NULL,
     completed_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
     FOREIGN KEY (from_currency_id) REFERENCES currencies(id),
     FOREIGN KEY (to_currency_id) REFERENCES currencies(id),
     FOREIGN KEY (status_id) REFERENCES order_statuses(id),
-    
     INDEX idx_order_number (order_number),
+    INDEX idx_client_email (client_email),
     INDEX idx_status (status_id),
-    INDEX idx_created_at (created_at),
-    INDEX idx_client_email (client_email)
-);
-
--- Таблица логов операций
-CREATE TABLE operation_logs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT,
-    action VARCHAR(100) NOT NULL,
-    description TEXT,
-    old_data JSON,
-    new_data JSON,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (order_id) REFERENCES exchange_orders(id),
-    INDEX idx_order_id (order_id),
-    INDEX idx_action (action),
     INDEX idx_created_at (created_at)
 );
 
--- Таблица настроек системы
+-- Создание таблицы системных настроек
 CREATE TABLE system_settings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    setting_key VARCHAR(100) NOT NULL UNIQUE,
-    setting_value TEXT,
-    description VARCHAR(255),
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value TEXT NOT NULL,
+    description TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Заполнение начальными данными
+-- Создание таблицы логов операций
+CREATE TABLE operation_logs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT,
+    operation_type VARCHAR(50) NOT NULL,
+    description TEXT,
+    old_status_id INT,
+    new_status_id INT,
+    user_id INT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES exchange_orders(id),
+    FOREIGN KEY (old_status_id) REFERENCES order_statuses(id),
+    FOREIGN KEY (new_status_id) REFERENCES order_statuses(id),
+    INDEX idx_order_id (order_id),
+    INDEX idx_created_at (created_at)
+);
 
--- Статусы заявок
-INSERT INTO order_statuses (name, description) VALUES
-('pending', 'Ожидает обработки'),
-('confirmed', 'Подтверждена'),
-('processing', 'В обработке'),
-('completed', 'Завершена'),
-('cancelled', 'Отменена'),
-('expired', 'Истекла');
+-- Вставка валют (только USDT, BTC, RUB_TBANK)
+INSERT INTO currencies (name, code, symbol, network, min_amount, max_amount, is_crypto, is_active) VALUES
+('Tether USD', 'USDT_TRC20', 'USDT', 'TRC20', 10.00, 50000.00, TRUE, TRUE),
+('Bitcoin', 'BTC', 'BTC', 'Bitcoin', 0.001, 10.0, TRUE, TRUE),
+('Рубли Т-Банк', 'RUB_TBANK', 'RUB', 'T-Bank', 1000.00, 2000000.00, FALSE, TRUE);
 
--- Валюты
-INSERT INTO currencies (code, name, symbol, network, min_amount, decimals) VALUES
-('USDT_TRC20', 'Tether USDT', 'USDT', 'TRC20', 10.00000000, 6),
-('RUB_TBANK', 'Российский рубль', 'RUB', 'Т-Банк', 500.00000000, 2),
-('BTC', 'Bitcoin', 'BTC', 'Bitcoin', 0.00010000, 8),
-('ETH', 'Ethereum', 'ETH', 'Ethereum', 0.01000000, 18),
-('USDT_ERC20', 'Tether USDT', 'USDT', 'ERC20', 10.00000000, 6),
-('USDC', 'USD Coin', 'USDC', 'ERC20', 10.00000000, 6);
+-- Вставка статусов заказов
+INSERT INTO order_statuses (name, description, color) VALUES
+('pending', 'Ожидает оплаты', '#ffc107'),
+('confirmed', 'Оплата подтверждена', '#17a2b8'),
+('processing', 'В обработке', '#007bff'),
+('completed', 'Завершен', '#28a745'),
+('cancelled', 'Отменен', '#dc3545'),
+('expired', 'Истек срок', '#6c757d');
 
--- Системные настройки
+-- Вставка системных настроек с комиссией 2%
 INSERT INTO system_settings (setting_key, setting_value, description) VALUES
-('site_name', 'CryptoExchange', 'Название сайта'),
-('admin_email', 'admin@cryptoexchange.com', 'Email администратора'),
-('order_expiry_minutes', '30', 'Время жизни заявки в минутах'),
-('min_order_amount_usd', '10', 'Минимальная сумма заявки в USD'),
-('max_order_amount_usd', '50000', 'Максимальная сумма заявки в USD'),
-('commission_percent', '1.5', 'Комиссия в процентах'),
-('api_update_interval', '60', 'Интервал обновления курсов в секундах');
+('commission_percent', '2.0', 'Процент комиссии за обмен'),
+('order_expiry_hours', '24', 'Время жизни заказа в часах'),
+('min_confirmations_btc', '3', 'Минимальное количество подтверждений для BTC'),
+('min_confirmations_usdt', '12', 'Минимальное количество подтверждений для USDT'),
+('support_email', 'support@crypto-exchange.com', 'Email поддержки'),
+('support_telegram', '@crypto_exchange_support', 'Telegram поддержки');
+
+-- Создание начальных курсов обмена (будут обновляться из API)
+-- USDT -> BTC
+INSERT INTO exchange_rates (from_currency_id, to_currency_id, rate, reverse_rate, source) VALUES
+((SELECT id FROM currencies WHERE code = 'USDT_TRC20'), (SELECT id FROM currencies WHERE code = 'BTC'), 0.000014, 71428.57, 'manual');
+
+-- BTC -> USDT  
+INSERT INTO exchange_rates (from_currency_id, to_currency_id, rate, reverse_rate, source) VALUES
+((SELECT id FROM currencies WHERE code = 'BTC'), (SELECT id FROM currencies WHERE code = 'USDT_TRC20'), 71428.57, 0.000014, 'manual');
+
+-- USDT -> RUB_TBANK
+INSERT INTO exchange_rates (from_currency_id, to_currency_id, rate, reverse_rate, source) VALUES
+((SELECT id FROM currencies WHERE code = 'USDT_TRC20'), (SELECT id FROM currencies WHERE code = 'RUB_TBANK'), 96.50, 0.0104, 'manual');
+
+-- RUB_TBANK -> USDT
+INSERT INTO exchange_rates (from_currency_id, to_currency_id, rate, reverse_rate, source) VALUES
+((SELECT id FROM currencies WHERE code = 'RUB_TBANK'), (SELECT id FROM currencies WHERE code = 'USDT_TRC20'), 0.0104, 96.50, 'manual');
