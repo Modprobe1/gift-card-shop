@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><title>Обмен</title></head>
+<body style="background:#0f172a;color:white;font-family:sans-serif;padding:2rem;max-width:700px;margin:auto;">
+<h2 style="font-size:1.5rem;margin-bottom:1.5rem;">Обмен криптовалюты</h2>
+<div style="display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:space-between;">
+  <div style="flex:1;min-width:280px;">
+    <label style="display:block;margin-bottom:0.5rem;">Отдаете (USDT):</label>
+    <input id="amount" type="number" style="width:100%;padding:0.75rem;border-radius:0.5rem;border:none;margin-bottom:1rem;">
+    <label style="display:block;margin-bottom:0.5rem;">Получите (RUB):</label>
+    <input id="result" readonly style="width:100%;padding:0.75rem;border-radius:0.5rem;background:#1e293b;border:none;">
+  </div>
+  <div style="flex:1;min-width:280px;">
+    <label style="display:block;margin-bottom:0.5rem;">ФИО:</label>
+    <input id="fio" type="text" style="width:100%;padding:0.75rem;border-radius:0.5rem;border:none;margin-bottom:1rem;">
+    <label style="display:block;margin-bottom:0.5rem;">Номер карты:</label>
+    <input id="card" type="text" style="width:100%;padding:0.75rem;border-radius:0.5rem;border:none;">
+  </div>
+</div>
+<div style="margin-top:2rem;text-align:center;">
+  <button onclick="submitOrder()" style="padding:1rem 2rem;background:#3b82f6;color:white;font-size:1rem;border:none;border-radius:0.75rem;cursor:pointer;">Обменять</button>
+</div>
+<script>
+let rate = 0;
+fetch("/api/rate/usdt_rub").then(r=>r.json()).then(data=>{ rate = data.rate; });
+
+document.getElementById("amount").addEventListener("input", () => {
+  const val = parseFloat(document.getElementById("amount").value);
+  document.getElementById("result").value = isNaN(val) ? "" : (val * rate).toFixed(2);
+});
+
+async function submitOrder() {
+  const amount = parseFloat(document.getElementById("amount").value);
+  const fio = document.getElementById("fio").value;
+  const card = document.getElementById("card").value;
+  if (!amount || !rate || !fio || !card) return alert("Заполните все поля");
+
+  const receive = parseFloat((amount * rate).toFixed(2));
+  const res = await fetch("/api/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ from: "USDT", to: "Сбербанк", amount, rate, receive_amount: receive, fio, card })
+  });
+  const json = await res.json();
+  if (json.order_id) window.location.href = "/tx_" + json.order_id;
+  else alert("Ошибка");
+}
+</script>
+</body></html>

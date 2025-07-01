@@ -1,0 +1,16 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Заявка</title></head>
+<body style="background:#0f172a;color:white;padding:2rem;font-family:sans-serif;">
+<div id="content">Загрузка...</div>
+<script>
+const id = window.location.pathname.split("_")[1];
+fetch('/tx_' + id).then(r=>r.json()).then(data=>{
+document.getElementById('content').innerHTML = `
+  <h2>Заявка ${data.id}</h2>
+  <p>Отдаете: ${data.amount} ${data.from}</p>
+  <p>Получаете: ${data.receive_amount} ${data.to}</p>
+  <p>ФИО: ${data.fio}</p>
+  <p>Карта: ${data.card}</p>
+  <p>Профит: ${data.profit.toFixed(2)} ₽</p>
+  <p>Дата: ${new Date(data.created_at).toLocaleString("ru-RU")}</p>
+`;}).catch(()=>document.getElementById('content').innerHTML='Заявка не найдена');
+</script></body></html>
