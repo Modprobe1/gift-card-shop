@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # MariaDB Database
+  database:
+    image: mariadb:11
+    container_name: crypto_exchange_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: crypto_exchange
+      MYSQL_USER: exchange_user
+      MYSQL_PASSWORD: exchange_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - crypto_network
+    restart: unless-stopped
+
+  # Backend Go API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crypto_exchange_backend
+    environment:
+      - DB_HOST=database
+      - DB_PORT=3306
+      - DB_USER=exchange_user
+      - DB_PASSWORD=exchange_password
+      - DB_NAME=crypto_exchange
+      - GIN_MODE=debug
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+    networks:
+      - crypto_network
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+    command: go run cmd/main.go
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: crypto_exchange_frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - crypto_network
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  # Adminer for database management
+  adminer:
+    image: adminer:4.8.1
+    container_name: crypto_exchange_adminer
+    ports:
+      - "8081:8080"
+    networks:
+      - crypto_network
+    restart: unless-stopped
+
+volumes:
+  db_data:
+
+networks:
+  crypto_network:
+    driver: bridge

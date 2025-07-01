@@ -1,0 +1,127 @@
+package main
+
+import (
+	"crypto-exchange-backend/internal/config"
+	"crypto-exchange-backend/internal/database"
+	"crypto-exchange-backend/internal/handlers"
+	"crypto-exchange-backend/internal/services"
+	"log"
+	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
+)
+
+func main() {
+	// Загружаем конфигурацию
+	cfg := config.Load()
+
+	// Настраиваем логирование
+	setupLogging(cfg.Server.LogLevel)
+
+	// Устанавливаем режим Gin
+	gin.SetMode(cfg.Server.Mode)
+
+	// Подключаемся к базе данных
+	db, err := database.Connect(cfg)
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	// Выполняем миграции
+	if err := database.Migrate(db); err != nil {
+		log.Fatal("Failed to migrate database:", err)
+	}
+
+	// Инициализируем сервисы
+	currencyService := services.NewCurrencyService(db)
+	rateService := services.NewRateService(db, cfg)
+	orderService := services.NewOrderService(db, currencyService, rateService)
+
+	// Запускаем обновление курсов в фоне
+	go rateService.StartRateUpdater()
+
+	// Инициализируем обработчики
+	handler := handlers.NewHandler(currencyService, rateService, orderService)
+
+	// Создаем роутер
+	router := setupRouter(handler)
+
+	// Запускаем сервер
+	logrus.Infof("Starting server on port %s", cfg.Server.Port)
+	if err := router.Run(":" + cfg.Server.Port); err != nil {
+		log.Fatal("Failed to start server:", err)
+	}
+}
+
+func setupLogging(level string) {
+	logrus.SetFormatter(&logrus.JSONFormatter{
+		TimestampFormat: time.RFC3339,
+	})
+
+	switch level {
+	case "debug":
+		logrus.SetLevel(logrus.DebugLevel)
+	case "info":
+		logrus.SetLevel(logrus.InfoLevel)
+	case "warn":
+		logrus.SetLevel(logrus.WarnLevel)
+	case "error":
+		logrus.SetLevel(logrus.ErrorLevel)
+	default:
+		logrus.SetLevel(logrus.InfoLevel)
+	}
+}
+
+func setupRouter(h *handlers.Handler) *gin.Engine {
+	router := gin.New()
+
+	// Middleware
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+
+	// CORS настройки
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	// Health check
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok", "timestamp": time.Now()})
+	})
+
+	// API группа
+	api := router.Group("/api/v1")
+	{
+		// Валюты
+		api.GET("/currencies", h.GetCurrencies)
+		api.GET("/currencies/:code", h.GetCurrency)
+
+		// Курсы обмена
+		api.GET("/rates", h.GetExchangeRates)
+		api.GET("/rates/:from/:to", h.GetExchangeRate)
+
+		// Калькулятор
+		api.POST("/calculate", h.Calculate)
+
+		// Заявки
+		api.POST("/orders", h.CreateOrder)
+		api.GET("/orders/:number", h.GetOrder)
+		
+		// Админские эндпоинты (в будущем добавим авторизацию)
+		admin := api.Group("/admin")
+		{
+			admin.GET("/orders", h.GetOrders)
+			admin.PUT("/orders/:id/status", h.UpdateOrderStatus)
+			admin.GET("/statistics", h.GetStatistics)
+		}
+	}
+
+	return router
+}

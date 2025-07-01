@@ -1,0 +1,362 @@
+.order-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 20px;
+}
+
+.order-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Заголовок */
+.order-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.order-header h1 {
+  font-size: 2.5rem;
+  color: #28a745;
+  margin: 0 0 10px 0;
+  font-weight: 700;
+}
+
+.order-subtitle {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+/* Карточки */
+.order-info-card,
+.exchange-details,
+.contact-info,
+.wallet-info,
+.next-steps,
+.important-info {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Основная информация о заявке */
+.order-info-card {
+  border-left: 4px solid #28a745;
+}
+
+.order-number,
+.order-status,
+.order-date {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.order-number:last-child,
+.order-status:last-child,
+.order-date:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.value {
+  font-weight: 500;
+  color: #333;
+  font-family: 'Courier New', monospace;
+}
+
+.status-badge {
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Детали обмена */
+.exchange-details h3,
+.contact-info h3,
+.wallet-info h3,
+.next-steps h3,
+.important-info h4 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-weight: 600;
+}
+
+.exchange-summary {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.exchange-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.exchange-from,
+.exchange-to {
+  flex: 1;
+  text-align: center;
+}
+
+.exchange-arrow {
+  margin: 0 20px;
+  font-size: 24px;
+  color: #007bff;
+  font-weight: bold;
+}
+
+.currency-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.currency-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.currency-network {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #007bff;
+}
+
+.exchange-rate {
+  text-align: center;
+  padding-top: 15px;
+  border-top: 1px solid #dee2e6;
+  color: #495057;
+  font-weight: 500;
+}
+
+/* Контактная информация */
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.contact-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.contact-value {
+  color: #333;
+  word-break: break-all;
+}
+
+/* Адрес кошелька */
+.wallet-address {
+  background: #e9ecef;
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  word-break: break-all;
+  border: 2px dashed #6c757d;
+  margin-bottom: 16px;
+}
+
+.wallet-details {
+  margin-top: 16px;
+}
+
+.wallet-details p {
+  margin: 8px 0;
+  color: #495057;
+}
+
+/* Следующие шаги */
+.next-steps ol {
+  padding-left: 20px;
+}
+
+.next-steps li {
+  margin-bottom: 8px;
+  color: #495057;
+  line-height: 1.5;
+}
+
+/* Действия */
+.order-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin: 30px 0;
+}
+
+.new-order-button,
+.copy-link-button,
+.back-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.new-order-button {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+}
+
+.copy-link-button {
+  background: #007bff;
+  color: white;
+}
+
+.back-button {
+  background: #6c757d;
+  color: white;
+}
+
+.new-order-button:hover,
+.copy-link-button:hover,
+.back-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Важная информация */
+.important-info {
+  border-left: 4px solid #ffc107;
+  background: #fff3cd;
+}
+
+.important-info ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.important-info li {
+  margin-bottom: 8px;
+  color: #856404;
+  line-height: 1.5;
+}
+
+/* Состояния загрузки и ошибки */
+.loading-spinner,
+.error-container {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner p {
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+.error-container h2 {
+  color: #dc3545;
+  margin-bottom: 16px;
+}
+
+.error-container p {
+  color: #6c757d;
+  margin-bottom: 24px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .order-page {
+    padding: 10px;
+  }
+  
+  .order-header h1 {
+    font-size: 2rem;
+  }
+  
+  .order-info-card,
+  .exchange-details,
+  .contact-info,
+  .wallet-info,
+  .next-steps,
+  .important-info {
+    padding: 16px;
+  }
+  
+  .exchange-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .exchange-arrow {
+    transform: rotate(90deg);
+    margin: 0;
+  }
+  
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .order-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .new-order-button,
+  .copy-link-button {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .order-number,
+  .order-status,
+  .order-date {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
