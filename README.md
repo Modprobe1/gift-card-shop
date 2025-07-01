@@ -1,105 +1,196 @@
-# 🚀 Crypto Exchange Platform
+# Cryptocurrency Exchange Platform
 
-Современная платформа для обмена криптовалют, построенная на React + Go + MariaDB.
+Платформа для обмена криптовалют, аналогичная tsunami.cash.
 
-## 🛠 Технологический стек
+## 🎯 Возможности
 
-- **Frontend:** React 18, TypeScript, Tailwind CSS
-- **Backend:** Go (Gin framework), REST API
-- **Database:** MariaDB
-- **Deployment:** Docker & Docker Compose
+- 🔄 Обмен USDT ↔ BTC и USDT ↔ RUB  
+- 📊 Реальные курсы с CoinGecko API
+- 💰 2% профит встроен в курсы
+- 🎨 Современный интерфейс в стиле tsunami.cash
+- 📱 Адаптивный дизайн
+- 🔗 Уникальные ссылки для каждой заявки
+
+## 🛠 Технологии
+
+- **Frontend**: React 18 + TypeScript
+- **Backend**: Go + Gin Framework  
+- **Database**: MariaDB 11
+- **Deployment**: Docker + Docker Compose
+
+## 🚀 Быстрый старт
+
+### Продакшен (рекомендуемый)
+
+```bash
+# Клонируем репозиторий
+git clone https://github.com/Modprobe1/gift-card-shop.git
+cd gift-card-shop
+
+# Запускаем продакшен версию
+docker compose up -d
+```
+
+### Разработка (с live reload)
+
+```bash
+# Запускаем dev версию с автоперезагрузкой
+docker compose -f docker-compose.dev.yml up -d
+```
+
+## 🌐 Доступ к сервисам
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8080  
+- **Database Admin**: http://localhost:8081
+  - Сервер: `database`
+  - Пользователь: `exchange_user`
+  - Пароль: `exchange_password`
+  - База: `crypto_exchange`
+
+## 📚 API Endpoints
+
+```
+GET    /api/health              - Проверка работы
+GET    /api/currencies          - Список валют
+GET    /api/rates               - Курсы обмена
+POST   /api/orders              - Создание заявки
+GET    /api/orders/:number      - Информация о заявке
+```
 
 ## 📁 Структура проекта
 
 ```
 crypto-exchange/
-├── frontend/           # React приложение
-│   ├── src/
-│   │   ├── components/ # Переиспользуемые компоненты
-│   │   ├── pages/      # Страницы приложения
-│   │   ├── services/   # API сервисы
-│   │   ├── utils/      # Утилиты
-│   │   └── assets/     # Статические файлы
-│   └── public/         # Публичные файлы
-├── backend/            # Go API сервер
-│   ├── cmd/           # Точки входа приложения
-│   ├── internal/      # Внутренняя логика
-│   │   ├── handlers/  # HTTP обработчики
-│   │   ├── models/    # Модели данных
-│   │   ├── services/  # Бизнес логика
-│   │   ├── database/  # Работа с БД
-│   │   └── config/    # Конфигурация
-│   └── pkg/           # Общие пакеты
-├── database/          # SQL схемы и миграции
-├── docker/            # Docker конфигурации
-└── docs/              # Документация
+├── backend/                 # Go API сервер
+│   ├── cmd/main.go         # Точка входа
+│   ├── internal/           # Внутренние пакеты
+│   └── Dockerfile          # Docker образ
+├── frontend/               # React приложение
+│   ├── src/                # Исходный код
+│   ├── public/             # Статические файлы
+│   └── Dockerfile          # Docker образ
+├── database/               # SQL схемы
+│   └── init/               # Скрипты инициализации
+├── docker-compose.yml      # Продакшен
+├── docker-compose.dev.yml  # Разработка
+└── README.md              # Документация
 ```
 
-## 🔥 Основные функции
+## ⚙️ Конфигурация
 
-- ✅ Обмен криптовалют в реальном времени
-- ✅ Актуальные курсы валют
-- ✅ Создание заявок на обмен
-- ✅ Система уведомлений
-- ✅ Админ панель
-- ✅ История транзакций
-- ✅ Интеграция с внешними API курсов
+### Переменные окружения
 
-## 🚀 Быстрый старт
-
-### Предварительные требования
-- Docker и Docker Compose
-- Node.js 18+ (для разработки frontend)
-- Go 1.21+ (для разработки backend)
-
-### Запуск в Docker
-```bash
-# Клонирование и переход в директорию
-cd crypto-exchange
-
-# Запуск всего стека
-docker-compose up -d
-
-# Приложение будет доступно на:
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8080
-# Adminer (DB): http://localhost:8081
+**Backend**:
+```env
+DB_HOST=database
+DB_PORT=3306
+DB_USER=exchange_user
+DB_PASSWORD=exchange_password
+DB_NAME=crypto_exchange
+GIN_MODE=release
+PORT=8080
 ```
 
-### Разработка
+**Frontend**:
+```env
+REACT_APP_API_URL=http://localhost:8080
+```
 
-#### Backend
+## 🚀 Развертывание на сервере
+
+### Ubuntu 22.04 LTS
+
+1. **Установка Docker**:
 ```bash
+# Обновляем систему
+sudo apt update && sudo apt upgrade -y
+
+# Устанавливаем Docker
+sudo apt install docker.io docker-compose-plugin -y
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+```
+
+2. **Клонируем и запускаем**:
+```bash
+git clone https://github.com/Modprobe1/gift-card-shop.git
+cd gift-card-shop
+docker compose up -d
+```
+
+3. **Настройка Nginx** (опционально):
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    
+    location /api/ {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+## 📊 Мониторинг
+
+```bash
+# Просмотр логов
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Статус контейнеров
+docker compose ps
+
+# Остановка
+docker compose down
+
+# Перезапуск
+docker compose restart
+```
+
+## 💻 Разработка
+
+### Локальная разработка
+
+```bash
+# Backend
 cd backend
-go mod tidy
+go mod download
 go run cmd/main.go
-```
 
-#### Frontend
-```bash
+# Frontend  
 cd frontend
 npm install
 npm start
 ```
 
-## 📊 API Документация
+### Тестирование API
 
-API документация доступна по адресу: `http://localhost:8080/docs`
+```bash
+# Проверка здоровья
+curl http://localhost:8080/api/health
 
-### Основные эндпоинты:
-- `GET /api/rates` - Получение курсов валют
-- `POST /api/orders` - Создание заявки на обмен
-- `GET /api/orders/:id` - Получение заявки
-- `GET /api/currencies` - Список поддерживаемых валют
+# Получение курсов
+curl http://localhost:8080/api/rates
 
-## 🔒 Безопасность
-
-- Валидация всех входящих данных
-- Rate limiting
-- CORS настройки
-- Защита от SQL инъекций
-- Логирование всех операций
+# Создание заявки
+curl -X POST http://localhost:8080/api/orders \
+  -H "Content-Type: application/json" \
+  -d '{"from_currency":"USDT_TRC20","to_currency":"BTC","from_amount":100,"client_name":"Test","client_phone":"+1234567890","client_email":"test@example.com","recipient_wallet":"bc1...","recipient_details":"Test wallet"}'
+```
 
 ## 📝 Лицензия
 
-MIT License - см. файл [LICENSE](LICENSE)
+MIT License
+
+## 🆘 Поддержка
+
+Если у вас возникли вопросы или проблемы, создайте Issue в репозитории.
