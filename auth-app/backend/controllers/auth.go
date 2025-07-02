@@ -71,7 +71,7 @@ func Register(c *gin.Context) {
 	}
 
 	// Генерация JWT токена
-	token, err := utils.GenerateToken(newUser.ID.Hex(), newUser.Email)
+	token, err := utils.GenerateToken(newUser.ID.Hex(), newUser.Email, 24*time.Hour)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
@@ -123,8 +123,14 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Определение срока действия токена
+	tokenDuration := 24 * time.Hour // По умолчанию 24 часа
+	if input.RememberMe {
+		tokenDuration = 30 * 24 * time.Hour // 30 дней, если включено "Запомнить меня"
+	}
+
 	// Генерация JWT токена
-	token, err := utils.GenerateToken(user.ID.Hex(), user.Email)
+	token, err := utils.GenerateToken(user.ID.Hex(), user.Email, tokenDuration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return

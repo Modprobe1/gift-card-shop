@@ -25,12 +25,12 @@ type Claims struct {
 }
 
 // GenerateToken создает JWT токен для пользователя
-func GenerateToken(userID, email string) (string, error) {
+func GenerateToken(userID, email string, duration time.Duration) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
