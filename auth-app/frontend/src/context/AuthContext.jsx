@@ -40,12 +40,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, rememberMe = false) => {
     try {
       setError(null);
       const response = await axios.post('http://localhost:8080/api/login', {
         email,
         password,
+        remember_me: rememberMe,
       });
       
       const { token, user } = response.data;

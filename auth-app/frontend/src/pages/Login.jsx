@@ -10,6 +10,7 @@ const Login = () => {
     email: '',
     password: '',
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +27,7 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    const result = await login(formData.email, formData.password);
+    const result = await login(formData.email, formData.password, rememberMe);
     
     if (result.success) {
       navigate('/dashboard');
@@ -72,6 +73,20 @@ const Login = () => {
               required
               className="form-input"
             />
+          </div>
+
+          <div className="form-group checkbox-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                name="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="form-checkbox"
+              />
+              <span>Запомнить меня</span>
+            </label>
           </div>
 
           <button
